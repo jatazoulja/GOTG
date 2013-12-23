@@ -1,0 +1,66 @@
+<html>
+<body>
+<script src="lib/jquery-1.10.2.min.js"></script>
+<script src="lib/socket.io.js"></script>
+<script>
+$(document).ready(function() {
+    var socket = io.connect('http://localhost:8080');
+
+    var id;
+
+    socket.on('initClient', function (data) {
+        id = data.id;
+        console.log(data);
+    });
+
+    socket.on('games', function(data) {
+        console.log("Number of games:" + data.games.length);
+        var html = "";
+        for (var x = 0; x < data.games.length; x++) {
+            var game = data.games[x];
+            console.log(game.id);
+            html += "<option value='" + game.id + "'>" + game.name + "</option>";
+        }
+
+        $("#gamesList").html(html);
+    });
+
+    socket.on('system', function(data) {
+        if (data.type == "status") {
+            console.log(data.message);
+        } else {
+            if (data.success) {
+                console.log("game has started");
+            } else {
+                console.log(data.message);
+            }
+        }
+    });
+
+    $("#listGamesBtn").on("click", function() {
+        console.log("list the game");
+        socket.emit('listGames');
+    });
+
+    $("#createGameBtn").on("click",function() {
+        socket.emit('createGame', {name: 'game2', clientID: id});
+    });
+
+    $("#joinGame").on("click",function() {
+        var gameID = $('#gamesList').find(":selected").val();
+        console.log("selected game is "+ gameID);
+        socket.emit('joinGame', {id: gameID, clientID: id});
+    });
+});
+
+</script>
+<div>
+    <button type="button" id="createGameBtn">Create Game</button>
+    <button type="button" id="listGamesBtn">List Games</button>
+</div>
+<div>
+    <select id="gamesList"></select>
+    <button type="button" id="joinGame">Join Game</button>
+</div>
+</body>
+</html>
