@@ -51,7 +51,7 @@
                         if (this.isReady()) {
                             // notify players
                             for (var i = 0; i < _players.length; i++) {
-                                _players[i].notify("system", {type: 'status', message: 'game is now ready'});
+                                _players[i].notify("system", {type: 'game', status: 'ready',  message: 'game is now ready'});
                             }
                         }
                     }
