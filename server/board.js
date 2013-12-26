@@ -10,5 +10,94 @@
                 _board[x] = new Array(Y_AXIS_SIZE);
             }
         })();
+
+        var _validateMove = function(from, to) {
+            if (to.x < 0 && to.x >= X_AXIS_SIZE && to.y < 0 && to.y >= Y_AXIS_SIZE) {
+                return false;
+            }
+            var diff = to.x - from.x;
+            if (diff === -1 || diff === 1) {
+                return true;
+            }
+            diff = to.y - from.y;
+            if (diff === -1 || diff === 1) {
+                return true;
+            }
+            return false;
+        }
+
+        return {
+            maxX: X_AXIS_SIZE,
+            maxY: Y_AXIS_SIZE,
+            getPieceAt: function(x, y) {
+                return _board[x][y];
+            },
+
+            place: function(side, pieces) {
+                for (var i = 0; i < pieces.length; i++) {
+                    var p = pieces[i];
+                    _board[p.pos.x][p.pos.y] = {rank: p.rank, color: side};
+                }
+            },
+
+            move: function(from, to) {
+                var pieceToMove = _board[from.x][from.y];
+                if (pieceToMove) {
+                    if (_validateMove(from, to)) {
+                        var piece = _board[to.x][to.y];
+                        if (!piece) {
+                            _board[to.x][to.y] = pieceToMove;
+                            _board[from.x][from.y] = null;
+                        } else {
+                            // either same side's piece or opponent piece
+                            if (piece.color != pieceToMove.color) {
+                                // we have a clash here!!
+                                if (piece.rank === pieceToMove.rank) {
+                                    // both dead, remove them both
+                                    _board[from.x][from.y] = null;
+                                    _board[to.x][to.y] = null;
+                                    // notify client
+                                }
+                                if (Board.PIECES[pieceToMove.rank].canKill.indexOf(piece.rank) > -1) {
+                                    // player who moved won!
+                                    _board[to.x][to.y] = _board[from.x][from.y];
+                                    _board[from.x][from.y] = null;
+                                    // notify client
+                                } else {
+                                    // player who moved lost!
+                                    _board[from.x][from.y] = null;
+                                    // notify client
+                                }
+                            } else {
+                                // invalid move!
+                            }
+                        }
+                    } else {
+                        // move is invalid
+                    }
+                } else {
+                    // this piece is no longer there... player might be cheating!!
+                }
+
+            }
+        }
+    }
+
+    Board.PIECES = {
+        1 : {name: "Spy", canKill: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ,13, 15]},
+        2 : {name: "General 5", canKill: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ,13, 14, 15]},
+        3 : {name: "General 4", conKill: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ,13, 14, 15]},
+        4 : {name: "General 3", conKill: [4, 5, 6, 7, 8, 9, 10, 11, 12 ,13, 14, 15]},
+        5 : {name: "General 2", conKill: [5, 6, 7, 8, 9, 10, 11, 12 ,13, 14, 15]},
+        6 : {name: "General 1", conKill: [6, 7, 8, 9, 10, 11, 12 ,13, 14, 15]},
+        7 : {name: "Colonel", conKill: [7, 8, 9, 10, 11, 12 ,13, 14, 15]},
+        8 : {name: "Lt. Colonel", conKill: [8, 9, 10, 11, 12 ,13, 14, 15]},
+        9 : {name: "Major", conKill: [9, 10, 11, 12 ,13, 14, 15]},
+        10 : {name: "Captain", conKill: [10, 11, 12 ,13, 14, 15]},
+        11 : {name: "1st Lieutenant", conKill: [11, 12 ,13, 14, 15]},
+        12 : {name: "2nd Lieutenant", conKill: [12 ,13, 14, 15]},
+        13 : {name: "Sergeant", conKill: [13, 14, 15]},
+        14 : {name: "Private", conKill: [14, 15, 1]},
+        15 : {name: "Flag", conKill: [15]}
     }
 })();

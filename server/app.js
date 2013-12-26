@@ -21,7 +21,7 @@ io.sockets.on('connection', function (socket) {
     socket.on('createGame', function (data) {
         var gameName = data.name;
         var game = new Game(gameName);
-        var player = new Player(data.clientID, socket);
+        var player = new Player(data.clientID, socket, game);
         game.join(player); // join the create game requester automatically to the game
         games[game.getId()] = game;
         socket.emit('system', {type: "status", message: "game created!"});

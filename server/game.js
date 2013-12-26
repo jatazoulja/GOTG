@@ -11,7 +11,7 @@
 
         _name = name || "";
 
-        var _isOntheGame = function (player) {
+        var _isOnTheGame = function (player) {
             for (var i = 0; i < _players.length; i++) {
                 var pInGame = _players[i];
                 if (player.getId() === pInGame.getId()) {
@@ -36,7 +36,7 @@
                 if (!this.isReady()) {
                     if (player) {
                         if (_players.length < MAX_PLAYERS) {
-                            if (!_isOntheGame(player)) {
+                            if (!_isOnTheGame(player)) {
                                 _players.push(player);
                                 console.log("app.game: Player has joined");
                             } else {
@@ -54,6 +54,7 @@
                             for (var i = 0; i < _players.length; i++) {
                                 var index = Math.floor((Math.random()*SIDES.length));
                                 var side = SIDES.splice(index, 1);
+                                _players[i].setSide(side);
                                 _players[i].notify("gameReady", {side: side});
                             }
                         }
@@ -65,6 +66,10 @@
 
             isReady: function () {
                 return _ready;
+            },
+
+            playerMoved: function(from, to) {
+                _board.move(from, to);
             }
         }
     };
