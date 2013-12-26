@@ -50,8 +50,11 @@
 
                         if (this.isReady()) {
                             // notify players
+                            var SIDES = ["white", "black"];
                             for (var i = 0; i < _players.length; i++) {
-                                _players[i].notify("system", {type: 'game', status: 'ready',  message: 'game is now ready'});
+                                var index = Math.floor((Math.random()*SIDES.length));
+                                var side = SIDES.splice(index, 1);
+                                _players[i].notify("gameReady", {side: side});
                             }
                         }
                     }

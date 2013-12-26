@@ -42,7 +42,6 @@
 }
 
 .piece {
-    background-color:gray;
     width: 80%;
     height: 70%;
     position: absolute;
@@ -51,6 +50,29 @@
     left: 0;
     bottom: 0;
     right: 0;
+    text-align: center;
+}
+
+.piece.white {
+    background-color: white;
+    border: 2px solid black;
+    color: black;
+}
+
+.piece.white.selected {
+    color: red;
+    font-weight: bold;
+}
+
+.piece.black {
+    background-color: black;
+    border: 2px solid white;
+    color: white;
+}
+
+.piece.black.selected {
+    color: yellow;
+    font-weight: bold;
 }
 
 #dashboard {
