@@ -5,6 +5,7 @@
             _game = game,
             _opponent,
             _side,
+            _ready = false;
             _turn = false;
 
         var __OBJ__ = {
@@ -24,8 +25,16 @@
                 return _turn;
             },
 
+            isReady: function() {
+                return _ready;
+            },
+
             notify: function(evt, data) {
                 _con.emit(evt, data);
+            },
+
+            ready: function() {
+                _ready = true;
             },
 
             setOpponent: function(player) {
@@ -46,14 +55,22 @@
 
         var _initEvents = function() {
             _con.on("server.move", function(move) {
-                if (_turn) {
-                    _game.playerMoved(__OBJ__, move.from, move.to);
+                if (_game.hasStarted()) {
+                    if (_turn) {
+                        _game.playerMoved(__OBJ__, move.from, move.to);
+                    } else {
+                        // not this player's turn
+                    }
                 } else {
-                    // not this player's turn
+                    // game has not started yet
                 }
             });
             _con.on("server.place", function(data) {
-                _game.playerPlace(__OBJ__, data.pieces);
+                if (!_game.hasStarted()) {
+                    _game.playerPlace(__OBJ__, data.pieces);
+                } else {
+                    // game has not started yet
+                }
             });
         };
 

@@ -7,7 +7,8 @@
             _name,
             _players = [],
             _board = new Board(),
-            _ready;
+            _ready,
+            _started;
 
         _name = name || "";
 
@@ -30,6 +31,10 @@
             },
             setName: function(name) {
                 _name = name;
+            },
+
+            hasStarted: function() {
+                return _started;
             },
 
             join: function(player) {
@@ -73,8 +78,13 @@
 
             playerPlace: function(player, pieces) {
                 _board.place(player.getSide(), pieces);
-                // notify opponent
+                player.ready();
                 player.getOpponent().notify("client.ready", {pieces: pieces, color: player.getSide()});
+                if (player.getOpponent().isReady()) {
+                    _started = true;
+                    player.emit("game.ready", {started: _started});
+                    player.getOpponent().emit("game.ready", {started: _started});
+                }
             },
 
             playerMoved: function(player, from, to) {
