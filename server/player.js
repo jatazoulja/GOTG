@@ -2,25 +2,12 @@
     Player = function(id, connection, game) {
         var _id = id,
             _con = connection,
-            _game = game;
+            _game = game,
             _opponent,
             _side,
             _turn = false;
 
-        var o = this;
-        var _initEvents = function() {
-            _con.on("server.move", function(move) {
-                if (_turn) {
-                    _game.playerMoved(o, move.from, move.to);
-                } else {
-                    // not this player's turn
-                }
-            });
-        };
-
-        _initEvents();
-
-        return {
+        var __OBJ__ = {
             getId: function () {
                 return _id;
             },
@@ -56,5 +43,22 @@
                 _turn = (_turn) ? false : true;
             }
         };
+
+        var _initEvents = function() {
+            _con.on("server.move", function(move) {
+                if (_turn) {
+                    _game.playerMoved(__OBJ__, move.from, move.to);
+                } else {
+                    // not this player's turn
+                }
+            });
+            _con.on("server.place", function(data) {
+                _game.playerPlace(__OBJ__, data.pieces);
+            });
+        };
+
+        _initEvents();
+
+        return __OBJ__;
     }
 })();

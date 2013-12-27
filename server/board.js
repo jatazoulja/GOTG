@@ -30,7 +30,11 @@
                 for (var i = 0; i < pieces.length; i++) {
                     var p = pieces[i];
                     _board[p.pos.x][p.pos.y] = {rank: p.rank, color: side};
+                    console.log("Board.place: " + Util.inspect(p, false, null));
+                    // TODO: should this be here???
+                    p.rank = null;
                 }
+                console.log("Board.place: board array has " + Util.inspect(_board, false, null));
             },
 
             move: function(from, to) {

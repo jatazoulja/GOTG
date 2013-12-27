@@ -1,15 +1,51 @@
 (function() {
     var BOARD = {
-        SIZE : { x : 9, y : 8}
+        SIZE : { x : 9, y : 8},
+        PIECES : [
+            {rank: 1, name: "Spy"},
+            {rank: 1, name: "Spy"},
+            {rank: 2, name: "General 5"},
+            {rank: 3, name: "General 4"},
+            {rank: 4, name: "General 3"},
+            {rank: 5, name: "General 2"},
+            {rank: 6, name: "General 1"},
+            {rank: 7, name: "Colonel"},
+            {rank: 8, name: "Lt. Colonel"},
+            {rank: 9, name: "Major"},
+            {rank: 10, name: "Captain"},
+            {rank: 11, name: "1st Lieutenant"},
+            {rank: 12, name: "2nd Lieutenant"},
+            {rank: 13, name: "Sergeant"},
+            {rank: 14, name: "Private"},
+            {rank: 14, name: "Private"},
+            {rank: 14, name: "Private"},
+            {rank: 14, name: "Private"},
+            {rank: 14, name: "Private"},
+            {rank: 14, name: "Private"},
+            {rank: 15, name: "Flag"}
+        ]
     };
 
     var SELECTED_PIECE;
 
     var turn;
 
-    var init = function(side) {
+    var init = function(side, socket) {
         constructBoard(side);
-        constructPieces(side);
+        constructPieces(BOARD.PIECES, side);
+
+        $('#readyBtn').click(function() {
+            var pieces = $('.piece.' + side);
+            if (pieces && pieces.length > 0) {
+                var data = [];
+                for (var i = 0; i < pieces.length; i++) {
+                    var pObj = $(pieces[i]);
+                    var index = pObj.parent().attr('id').split('_');
+                    data.push({rank: pObj.attr('rank'), pos: {x: index[0],y: index[1]}});
+                }
+                socket.emit("server.place", {pieces: data});
+            }
+        });
     };
 
     var constructBoard = function(side) {
@@ -42,43 +78,23 @@
         });
     };
 
-    var constructPieces = function(color) {
-        var pieces = [
-            {rank: "Spy", count: 2},
-            {rank: "General 5", count: 1},
-            {rank: "General 4", count: 1},
-            {rank: "General 3", count: 1},
-            {rank: "General 2", count: 1},
-            {rank: "General 1", count: 1},
-            {rank: "Colonel", count: 1},
-            {rank: "Lt. Colonel", count: 1},
-            {rank: "Major", count: 1},
-            {rank: "Captain", count: 1},
-            {rank: "1st Lieutenant", count: 1},
-            {rank: "2nd Lieutenant", count: 1},
-            {rank: "Sergeant", count: 1},
-            {rank: "Private", count: 6},
-            {rank: "Flag", count: 1}
-        ];
-
+    var constructPieces = function(pieces, color) {
         var x = (color == "white") ? 0 : BOARD.SIZE.x-1,
             y = (color == "white") ? 0 : BOARD.SIZE.y-1;
         for (var i = 0; i < pieces.length; i++) {
             var piece = pieces[i];
-            for (var c = 0; c < piece.count; c++) {
-                var html = "<div class='piece " + color + "'>" + piece.rank + "</div>";
-                var id = x + "_" + y;
-                $('#' + id).html(html);
-                if (color == "white") {
-                    if (++x > BOARD.SIZE.x-1) {
-                        x=0;
-                        y++;
-                    }
-                } else {
-                    if (--x < 0) {
-                        x = BOARD.SIZE.x-1;
-                        y--;
-                    }
+            var html = "<div class='piece " + color + "' rank='" + piece.rank + "'>" + piece.name + "</div>";
+            var id = x + "_" + y;
+            $('#' + id).html(html);
+            if (color == "white") {
+                if (++x > BOARD.SIZE.x-1) {
+                    x=0;
+                    y++;
+                }
+            } else {
+                if (--x < 0) {
+                    x = BOARD.SIZE.x-1;
+                    y--;
                 }
             }
         }
@@ -130,7 +146,16 @@
         });
 
         socket.on('gameReady', function(data) {
-            init(data.side);
+            init(data.side, socket);
+        });
+
+        socket.on('client.ready', function(data) {
+            // TODO: this shouldn't be here!!!
+            for (var i = 0; i < data.pieces.length; i++) {
+                var piece = data.pieces[i];
+                $('#'+piece.pos.x+'_'+piece.pos.y)
+                    .html("<div class='piece " + data.color + "' rank='" + piece.rank + "'></div>");
+            }
         });
 
         $("#listGamesBtn").on("click", function() {

@@ -71,6 +71,12 @@
                 return _ready;
             },
 
+            playerPlace: function(player, pieces) {
+                _board.place(player.getSide(), pieces);
+                // notify opponent
+                player.getOpponent().notify("client.ready", {pieces: pieces, color: player.getSide()});
+            },
+
             playerMoved: function(player, from, to) {
                 var actions = _board.move(from, to);
                 if (actions) {

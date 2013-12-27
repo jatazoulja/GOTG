@@ -5,6 +5,7 @@ var app = require("express"),
 
 require('./game');
 require('./player');
+Util = require('util');
 
 //app.get('/', function (req, res) {
 //  res.sendfile(__dirname + '/index.html');
@@ -45,7 +46,7 @@ io.sockets.on('connection', function (socket) {
         var game = games[data.id];
 
         if (game) {
-            var player = new Player(data.clientID, socket);
+            var player = new Player(data.clientID, socket, game);
             game.join(player);
         } else {
             console.log("evt.joinGame: " + data.id + " not found");
