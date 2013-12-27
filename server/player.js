@@ -7,10 +7,11 @@
             _side,
             _turn = false;
 
+        var o = this;
         var _initEvents = function() {
-            _con.on("move", function(move) {
+            _con.on("server.move", function(move) {
                 if (_turn) {
-                    _game.playerMoved(move.from, move.to);
+                    _game.playerMoved(o, move.from, move.to);
                 } else {
                     // not this player's turn
                 }
@@ -24,16 +25,35 @@
                 return _id;
             },
 
+            getOpponent: function() {
+                return _opponent;
+            },
+
             getSide: function() {
                 return _side;
+            },
+
+            getTurn: function() {
+                return _turn;
             },
 
             notify: function(evt, data) {
                 _con.emit(evt, data);
             },
 
+            setOpponent: function(player) {
+                _opponent = player;
+            },
+
             setSide: function(side) {
                 _side = side;
+                if (side == "white") {
+                    this.toggleTurn();
+                }
+            },
+
+            toggleTurn: function() {
+                _turn = (_turn) ? false : true;
             }
         };
     }

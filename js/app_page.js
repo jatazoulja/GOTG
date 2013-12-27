@@ -5,6 +5,8 @@
 
     var SELECTED_PIECE;
 
+    var turn;
+
     var init = function(side) {
         constructBoard(side);
         constructPieces(side);
@@ -81,7 +83,7 @@
             }
         }
 
-        $("#board .block").delegate(".piece", "click", function() {
+        $("#board .block").delegate(".piece." + color, "click", function() {
             if ($(this).hasClass(color)) {
                 if (SELECTED_PIECE) {
                     // deselect it first

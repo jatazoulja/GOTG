@@ -38,14 +38,17 @@
                         if (_players.length < MAX_PLAYERS) {
                             if (!_isOnTheGame(player)) {
                                 _players.push(player);
-                                console.log("app.game: Player has joined");
+                                if (_players.length == MAX_PLAYERS) {
+                                    _ready = true;
+                                    // set player's opponent
+                                    // TODO: find a way not to hardcode this!!
+                                    _players[0].setOpponent(_players[1]);
+                                    _players[1].setOpponent(_players[0]);
+                                }
+                                console.info("app.game: Player has joined");
                             } else {
                                 player.notify("system", {type: 'status', message: 'player already in the game'});
                             }
-                        }
-
-                        if (_players.length == MAX_PLAYERS) {
-                            _ready = true;
                         }
 
                         if (this.isReady()) {
@@ -68,8 +71,14 @@
                 return _ready;
             },
 
-            playerMoved: function(from, to) {
-                _board.move(from, to);
+            playerMoved: function(player, from, to) {
+                var actions = _board.move(from, to);
+                if (actions) {
+                    for (var i = 0; i < _players.length; i++) {
+                        _players[i].toggleTurn();
+                        _players[i].notify("client.move", {action: actions, turn: _players[i].getTurn()});
+                    }
+                }
             }
         }
     };
