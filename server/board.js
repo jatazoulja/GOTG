@@ -3,6 +3,11 @@
         var X_AXIS_SIZE = 9,
             Y_AXIS_SIZE = 8;
 
+        var VALID_PLACINGS = {
+            white: {from: {x:0,y:0}, to: {x:X_AXIS_SIZE-1, y:2}},
+            black: {from: {x:0,y:5}, to: {x:X_AXIS_SIZE-1, y:Y_AXIS_SIZE-1}}
+        }
+
         var _board;
         (function _init() {
             _board = new Array(X_AXIS_SIZE);
@@ -21,7 +26,13 @@
                 return true;
             }
             return false;
-        }
+        };
+
+        var _validatePlacing = function(x, y, color) {
+            var validPlacing = VALID_PLACINGS[color];
+            return x >= validPlacing.from.x && x <= validPlacing.to.x &&
+                y >= validPlacing.from.y && y <= validPlacing.to.y;
+        };
 
         return {
             maxX: X_AXIS_SIZE,
@@ -29,6 +40,9 @@
             place: function(side, pieces) {
                 for (var i = 0; i < pieces.length; i++) {
                     var p = pieces[i];
+                    if (!_validatePlacing(p.pos.x, p.pos.y, side)) {
+                        return false;
+                    }
                     _board[p.pos.x][p.pos.y] = {rank: p.rank, color: side};
                     console.log("Board.place: " + Util.inspect(p, false, null));
                     // TODO: should this be here???
@@ -39,6 +53,7 @@
             },
 
             move: function(from, to) {
+                var actions;
                 var pieceToMove = _board[from.x][from.y];
                 if (pieceToMove) {
                     if (_validateMove(from, to)) {
@@ -47,7 +62,7 @@
                             _board[to.x][to.y] = pieceToMove;
                             _board[from.x][from.y] = null;
                             // notify client
-                            return [
+                            actions = [
                                 {action : "place", from : from, to: to}
                             ];
                         } else {
@@ -55,43 +70,62 @@
                             if (piece.color != pieceToMove.color) {
                                 // we have a clash here!!
                                 if (piece.rank === pieceToMove.rank) {
+                                    actions = [
+                                        {action: 'remove', position: from},
+                                        {action: 'remove', position: to}
+                                    ];
+                                    if (piece.rank == 15) {
+                                        // both are flag, we had a draw
+                                        actions.push({action: 'finished', winner: ''});
+                                    }
                                     // both dead, remove them both
                                     _board[from.x][from.y] = null;
                                     _board[to.x][to.y] = null;
                                     // notify client
-                                    return [
-                                        {action: 'remove', position: from,},
-                                        {action: 'remove', position: to,}
-                                    ];
+
                                 }
-                                if (Board.PIECES[pieceToMove.rank].canKill.indexOf(piece.rank) > -1) {
+                                if (Board.PIECES[pieceToMove.rank].canKill.indexOf(parseInt(piece.rank)) > -1) {
                                     // player who moved won!
-                                    _board[to.x][to.y] = _board[from.x][from.y];
-                                    _board[from.x][from.y] = null;
-                                    // notify client
-                                    return [
+                                    actions = [
                                         {action: 'remove', position: to},
                                         {action: 'place', from: from, to: to}
                                     ];
+                                    if (_board[to.x][to.y].rank == 15) {
+                                        actions.push({action: 'finished', winner: _board[from.x][from.y].color});
+                                    }
+                                    _board[to.x][to.y] = _board[from.x][from.y];
+                                    _board[from.x][from.y] = null;
                                 } else {
                                     // player who moved lost!
-                                    _board[from.x][from.y] = null;
-                                    return [
+                                    actions = [
                                         {action: "remove", position: from}
                                     ]
+                                    if (_board[from.x][from.y].rank == 15) {
+                                        actions.push({action: 'finished', winner: _board[to.x][to.y].color});
+                                    }
+                                    _board[from.x][from.y] = null;
                                     // notify client
                                 }
                             } else {
                                 // invalid move!
                             }
                         }
+                        if (_board[to.x][to.y].rank == 15 && to.y == 0 && _board[to.x][to.y].color == 'black') {
+                            // black won
+                            actions.push({action: 'finished', winner: 'black'});
+                        } else if (_board[to.x][to.y].rank == 15 && to.y == Y_AXIS_SIZE-1
+                            && _board[to.x][to.y].color == 'white') {
+                            // white won
+                            actions.push({action: 'finished', winner: 'white'});
+                        }
+                        return actions;
                     } else {
                         // move is invalid
                     }
                 } else {
                     // this piece is no longer there... player might be cheating!!
                 }
-
+                return;
             }
         }
     };

@@ -207,6 +207,8 @@
                     var rPiece = jFromObj.html();
                     jFromObj.html("");
                     $("#"+toId).html(rPiece);
+                } else if (type == 'finished') {
+                    alert(action.winner + " has won!");
                 }
             }
 
