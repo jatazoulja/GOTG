@@ -35,6 +35,7 @@
                     p.rank = null;
                 }
                 console.log("Board.place: board array has " + Util.inspect(_board, false, null));
+                return true;
             },
 
             move: function(from, to) {
@@ -96,20 +97,20 @@
     };
 
     Board.PIECES = {
-        1 : {name: "Spy", canKill: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ,13, 15]},
-        2 : {name: "General 5", canKill: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ,13, 14, 15]},
-        3 : {name: "General 4", conKill: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ,13, 14, 15]},
-        4 : {name: "General 3", conKill: [4, 5, 6, 7, 8, 9, 10, 11, 12 ,13, 14, 15]},
-        5 : {name: "General 2", conKill: [5, 6, 7, 8, 9, 10, 11, 12 ,13, 14, 15]},
-        6 : {name: "General 1", conKill: [6, 7, 8, 9, 10, 11, 12 ,13, 14, 15]},
-        7 : {name: "Colonel", conKill: [7, 8, 9, 10, 11, 12 ,13, 14, 15]},
-        8 : {name: "Lt. Colonel", conKill: [8, 9, 10, 11, 12 ,13, 14, 15]},
-        9 : {name: "Major", conKill: [9, 10, 11, 12 ,13, 14, 15]},
-        10 : {name: "Captain", conKill: [10, 11, 12 ,13, 14, 15]},
-        11 : {name: "1st Lieutenant", conKill: [11, 12 ,13, 14, 15]},
-        12 : {name: "2nd Lieutenant", conKill: [12 ,13, 14, 15]},
-        13 : {name: "Sergeant", conKill: [13, 14, 15]},
-        14 : {name: "Private", conKill: [14, 15, 1]},
-        15 : {name: "Flag", conKill: [15]}
+        '1' : {name: "Spy", canKill: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ,13, 15]},
+        '2' : {name: "General 5", canKill: [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ,13, 14, 15]},
+        '3' : {name: "General 4", canKill: [3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ,13, 14, 15]},
+        '4' : {name: "General 3", canKill: [4, 5, 6, 7, 8, 9, 10, 11, 12 ,13, 14, 15]},
+        '5' : {name: "General 2", canKill: [5, 6, 7, 8, 9, 10, 11, 12 ,13, 14, 15]},
+        '6' : {name: "General 1", canKill: [6, 7, 8, 9, 10, 11, 12 ,13, 14, 15]},
+        '7' : {name: "Colonel", canKill: [7, 8, 9, 10, 11, 12 ,13, 14, 15]},
+        '8' : {name: "Lt. Colonel", canKill: [8, 9, 10, 11, 12 ,13, 14, 15]},
+        '9' : {name: "Major", canKill: [9, 10, 11, 12 ,13, 14, 15]},
+        '10' : {name: "Captain", canKill: [10, 11, 12 ,13, 14, 15]},
+        '11' : {name: "1st Lieutenant", canKill: [11, 12 ,13, 14, 15]},
+        '12' : {name: "2nd Lieutenant", canKill: [12 ,13, 14, 15]},
+        '13' : {name: "Sergeant", canKill: [13, 14, 15]},
+        '14' : {name: "Private", canKill: [14, 15, 1]},
+        '15' : {name: "Flag", canKill: [15]}
     }
 })();

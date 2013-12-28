@@ -63,7 +63,7 @@
                                 var index = Math.floor((Math.random()*SIDES.length));
                                 var side = SIDES.splice(index, 1);
                                 _players[i].setSide(side);
-                                _players[i].notify("gameReady", {side: side});
+                                _players[i].notify("game.ready", {side: side});
                             }
                         }
                     }
@@ -77,13 +77,15 @@
             },
 
             playerPlace: function(player, pieces) {
-                _board.place(player.getSide(), pieces);
-                player.ready();
-                player.getOpponent().notify("client.ready", {pieces: pieces, color: player.getSide()});
-                if (player.getOpponent().isReady()) {
-                    _started = true;
-                    player.emit("game.ready", {started: _started});
-                    player.getOpponent().emit("game.ready", {started: _started});
+                var valid = _board.place(player.getSide(), pieces);
+                if (valid) {
+                    player.ready();
+                    player.getOpponent().notify("client.ready", {pieces: pieces, color: player.getSide()});
+                    if (player.getOpponent().isReady()) {
+                        _started = true;
+                        player.notify("game.start", {started: _started, turn: player.turn()});
+                        player.getOpponent().notify("game.start", {started: _started, turn: player.getOpponent().turn()});
+                    }
                 }
             },
 
@@ -92,7 +94,7 @@
                 if (actions) {
                     for (var i = 0; i < _players.length; i++) {
                         _players[i].toggleTurn();
-                        _players[i].notify("client.move", {action: actions, turn: _players[i].getTurn()});
+                        _players[i].notify("client.move", {actions: actions, turn: _players[i].turn()});
                     }
                 }
             }

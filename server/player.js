@@ -5,10 +5,10 @@
             _game = game,
             _opponent,
             _side,
-            _ready = false;
+            _ready = false,
             _turn = false;
 
-        var __OBJ__ = {
+        var THIS = {
             getId: function () {
                 return _id;
             },
@@ -21,7 +21,7 @@
                 return _side;
             },
 
-            getTurn: function() {
+            turn: function() {
                 return _turn;
             },
 
@@ -57,7 +57,7 @@
             _con.on("server.move", function(move) {
                 if (_game.hasStarted()) {
                     if (_turn) {
-                        _game.playerMoved(__OBJ__, move.from, move.to);
+                        _game.playerMoved(THIS, move.from, move.to);
                     } else {
                         // not this player's turn
                     }
@@ -67,7 +67,7 @@
             });
             _con.on("server.place", function(data) {
                 if (!_game.hasStarted()) {
-                    _game.playerPlace(__OBJ__, data.pieces);
+                    _game.playerPlace(THIS, data.pieces);
                 } else {
                     // game has not started yet
                 }
@@ -76,6 +76,6 @@
 
         _initEvents();
 
-        return __OBJ__;
+        return THIS;
     }
 })();
