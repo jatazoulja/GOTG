@@ -57,7 +57,7 @@
             _con.on("server.move", function(move) {
                 if (_game.hasStarted()) {
                     if (_turn) {
-                        _game.playerMoved(THIS, move.from, move.to);
+                        _game.playerMoved(THIS, move.moveId, move.from, move.to);
                     } else {
                         // not this player's turn
                     }
@@ -71,6 +71,9 @@
                 } else {
                     // game has not started yet
                 }
+            });
+            _con.on("disconnect", function() {
+                console.info("Client with id " + _id + " has been disconnected");
             });
         };
 

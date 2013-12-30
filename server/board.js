@@ -108,6 +108,7 @@
                                 }
                             } else {
                                 // invalid move!
+                                return false;
                             }
                         }
                         if (_board[to.x][to.y].rank == 15 && to.y == 0 && _board[to.x][to.y].color == 'black') {
@@ -121,11 +122,12 @@
                         return actions;
                     } else {
                         // move is invalid
+                        return false;
                     }
                 } else {
                     // this piece is no longer there... player might be cheating!!
+                    return false;
                 }
-                return;
             }
         }
     };
