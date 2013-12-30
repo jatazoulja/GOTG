@@ -1,4 +1,5 @@
-var app = require("express"),
+var express = require("express"),
+    app = new express(),
     http = require('http'),
     server = http.createServer(app),
     io = require('socket.io').listen(server);
@@ -7,9 +8,21 @@ require('./game');
 require('./player');
 Util = require('util');
 
-//app.get('/', function (req, res) {
-//  res.sendfile(__dirname + '/index.html');
-//});
+app.get('/', function (req, res) {
+    res.sendfile('app.html', {root: '../'});
+});
+
+app.get('/lib/*', function (req, res) {
+    res.sendfile('lib/' + req.params[0], {root: '../'});
+});
+
+app.get('/css/*', function (req, res) {
+    res.sendfile('css/' + req.params[0], {root: '../'});
+});
+
+app.get('/js/*', function (req, res) {
+    res.sendfile('js/' + req.params[0], {root: '../'});
+});
 
 var clientIdCounter = 0;
 var games = {};
@@ -55,3 +68,4 @@ io.sockets.on('connection', function (socket) {
 });
 
 server.listen(8080);
+//http.createServer(app).listen(80);
