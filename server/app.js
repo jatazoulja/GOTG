@@ -8,8 +8,40 @@ require('./game');
 require('./player');
 Util = require('util');
 
+var __VALID_USERS__ = {
+    'kenneth': 'qwerty'
+};
+
+var MemoryStore = express.session.MemoryStore,
+    sessionStore = new MemoryStore();
+
+app.use(express.bodyParser());
+app.use(express.cookieParser());
+//app.use(express.session({secret: '1234567890QWERTY'}));
+app.use(express.session({
+    store: sessionStore,
+    secret: '1234567890QWERTY',
+    key: 'express.sid'
+}));
+
 app.get('/', function (req, res) {
-    res.sendfile('app.html', {root: '../'});
+    if (req.session.user) {
+        res.sendfile('app.html', {root: '../'});
+    } else {
+        res.sendfile('login.html', {root: '../'});
+    }
+});
+
+app.post('/login', function (req, res) {
+    var user = req.body['u'],
+        pass = req.body['p'];
+
+    if (__VALID_USERS__[user] && __VALID_USERS__[user] == pass) {
+        req.session.user = user;
+        res.redirect('/');
+    } else {
+        res.sendfile('login.html', {root: '../'});
+    }
 });
 
 app.get('/lib/*', function (req, res) {
@@ -27,6 +59,29 @@ app.get('/js/*', function (req, res) {
 var clientIdCounter = 0;
 var games = {};
 var clients = [];
+
+io.set('authorization', function (data, accept) {
+    if (data.headers.cookie) {
+        var cName = 'express.sid';
+        var regex = new RegExp(cName + '=([^;]*)', 'g');
+        var result = regex.exec(data.headers.cookie);
+        var sessionID = result[1].split('.')[0].replace('s%3A', "");
+
+        sessionStore.get(sessionID, function (err, session) {
+            if (err) {
+                accept(err.message, false); //Turn down the connection
+            } else {
+                if (session && session.user) {
+                    accept(null, true); //Accept the session
+                } else {
+                    accept("No username in session", false); //Turn down the connection
+                }
+            }
+        });
+    } else {
+        return accept('No cookie transmitted.', false);
+    }
+});
 
 io.sockets.on('connection', function (socket) {
 

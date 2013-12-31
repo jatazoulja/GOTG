@@ -176,7 +176,8 @@
     };
 
     $(document).ready(function() {
-        var socket = io.connect('http://localhost:8080');
+        var hostname = window.location.hostname;
+        var socket = io.connect('http://' + hostname + ':8080');
 
         var id;
 
