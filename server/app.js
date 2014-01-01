@@ -9,15 +9,31 @@ require('./game');
 require('./player');
 Util = require('util');
 
-var __VALID_USERS__ = {
-    'kenneth': 'qwerty'
-};
-
 var MemoryStore = express.session.MemoryStore,
     sessionStore = new MemoryStore();
 
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/db');
+
+var Users = mongoose.model('users', {name: String, password: String});
+
+var __initUsers__ = function() {
+    Users.find({name: "kenneth"}, function(err, doc) {
+        console.info('FINDING USER ' + Util.inspect(doc, false, null));
+        if (doc && doc.length == 0) {
+            var crypto = require('crypto');
+            var pass = crypto.createHmac("sha1", '1234567890QWERTY').update('qwerty').digest("hex");
+
+            var user = new Users({name: "kenneth", password: pass});
+            user.save(function(err, user, count) {
+                if (err) {
+                    console.error('SAVING USER FAILED ' + err);
+                }
+                console.info('SAVED USER count ' + count);
+            });
+        }
+    });
+}();
 
 app.configure(function() {
     sessionStore = new (require('express-sessions'))({
@@ -56,12 +72,14 @@ app.post('/login', function (req, res) {
     var user = req.body['u'],
         pass = req.body['p'];
 
-    if (__VALID_USERS__[user] && __VALID_USERS__[user] == pass) {
-        req.session.user = user;
-        res.redirect('/');
-    } else {
-        res.sendfile('login.html', {root: '../'});
-    }
+    authenticate(user, pass, function(err, valid) {
+        if (valid) {
+            req.session.user = user;
+            res.redirect('/');
+        } else {
+            res.sendfile('login.html', {root: '../'});
+        }
+    });
 });
 
 app.get('/lib/*', function (req, res) {
@@ -142,5 +160,16 @@ io.sockets.on('connection', function (socket) {
     });
 });
 
+var authenticate = function(user, pass, cb) {
+    var crypto = require('crypto');
+    var p = require('crypto').createHmac("sha1", '1234567890QWERTY').update(pass).digest("hex");
+
+    Users.findOne({name: user}, function(err, doc) {
+        if (doc && doc.password == p) {
+            return cb(null, true);
+        }
+        return cb('Invalid username of password', false);
+    });
+}
+
 server.listen(8080);
-//http.createServer(app).listen(80);
