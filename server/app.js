@@ -3,28 +3,38 @@ var express = require("express"),
     http = require('http'),
     server = http.createServer(app),
     io = require('socket.io').listen(server),
-    connect = require('connect');
+    connect = require('connect'),
+    crypto = require('crypto'),
+    uuid = require('node-uuid');
 
 require('./game');
 require('./player');
 Util = require('util');
 
-var MemoryStore = express.session.MemoryStore,
-    sessionStore = new MemoryStore();
-
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/db');
 
-var Users = mongoose.model('users', {name: String, password: String});
+var SessionStore = require('express-sessions'),
+    sessionStore = new SessionStore({
+        storage: 'mongodb',
+        instance: mongoose, // optional
+        collection: 'sessions', // optional
+        expire: 86400 // optional
+    });
+
+var Users = mongoose.model('users',
+        new mongoose.Schema({
+                _id: {type: String, index: true},
+                name: String,
+                password: String}));
 
 var __initUsers__ = function() {
     Users.find({name: "kenneth"}, function(err, doc) {
         console.info('FINDING USER ' + Util.inspect(doc, false, null));
         if (doc && doc.length == 0) {
-            var crypto = require('crypto');
             var pass = crypto.createHmac("sha1", '1234567890QWERTY').update('qwerty').digest("hex");
 
-            var user = new Users({name: "kenneth", password: pass});
+            var user = new Users({_id: uuid.v1(), name: "kenneth", password: pass});
             user.save(function(err, user, count) {
                 if (err) {
                     console.error('SAVING USER FAILED ' + err);
@@ -36,23 +46,9 @@ var __initUsers__ = function() {
 }();
 
 app.configure(function() {
-    sessionStore = new (require('express-sessions'))({
-        storage: 'mongodb',
-        instance: mongoose, // optional
-        collection: 'sessions', // optional
-        expire: 86400 // optional
-    });
-
     app.use(connect.urlencoded());
     app.use(connect.json());
-    //app.use(express.bodyParser());
     app.use(express.cookieParser());
-    //app.use(express.session({secret: '1234567890QWERTY'}));
-//    app.use(express.session({
-//        store: sessionStore,
-//        secret: '1234567890QWERTY',
-//        key: 'express.sid'
-//    }));
     app.use(express.session({
         secret: 'a4f8071f-c873-4447-8ee2',
         cookie: { maxAge: 2628000000 },
@@ -61,35 +57,42 @@ app.configure(function() {
 });
 
 app.get('/', function (req, res) {
-    if (req.session.user) {
+    if (req.session.userId) {
         res.sendfile('app.html', {root: '../'});
     } else {
         res.sendfile('login.html', {root: '../'});
     }
 });
-
 app.post('/login', function (req, res) {
     var user = req.body['u'],
         pass = req.body['p'];
 
-    authenticate(user, pass, function(err, valid) {
-        if (valid) {
-            req.session.user = user;
+    authenticate(user, pass, function(err, id) {
+        if (id) {
+            req.session.userId = id;
             res.redirect('/');
         } else {
             res.sendfile('login.html', {root: '../'});
         }
     });
 });
-
+app.get('/logout', function(req, res) {
+    var sid = req.session.id;
+    sessionStore.destroy(sid, function(err) {
+        if (err) {
+            console.log("Error logging out!");
+            return;
+        }
+        res.cookie('connect.sid', '', {expires: new Date(1), path: '/'});
+        res.redirect('/');
+    });
+});
 app.get('/lib/*', function (req, res) {
     res.sendfile('lib/' + req.params[0], {root: '../'});
 });
-
 app.get('/css/*', function (req, res) {
     res.sendfile('css/' + req.params[0], {root: '../'});
 });
-
 app.get('/js/*', function (req, res) {
     res.sendfile('js/' + req.params[0], {root: '../'});
 });
@@ -109,7 +112,7 @@ io.set('authorization', function (data, accept) {
             if (err) {
                 accept(err.message, false); //Turn down the connection
             } else {
-                if (session && session.user) {
+                if (session && session.userId) {
                     accept(null, true); //Accept the session
                 } else {
                     accept("No username in session", false); //Turn down the connection
@@ -161,12 +164,13 @@ io.sockets.on('connection', function (socket) {
 });
 
 var authenticate = function(user, pass, cb) {
+    cb = cb || function() {};
     var crypto = require('crypto');
-    var p = require('crypto').createHmac("sha1", '1234567890QWERTY').update(pass).digest("hex");
+    var p = crypto.createHmac("sha1", '1234567890QWERTY').update(pass).digest("hex");
 
     Users.findOne({name: user}, function(err, doc) {
         if (doc && doc.password == p) {
-            return cb(null, true);
+            return cb(null, doc._id);
         }
         return cb('Invalid username of password', false);
     });
