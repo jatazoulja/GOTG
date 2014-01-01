@@ -2,7 +2,8 @@ var express = require("express"),
     app = new express(),
     http = require('http'),
     server = http.createServer(app),
-    io = require('socket.io').listen(server);
+    io = require('socket.io').listen(server),
+    connect = require('connect');
 
 require('./game');
 require('./player');
@@ -15,14 +16,33 @@ var __VALID_USERS__ = {
 var MemoryStore = express.session.MemoryStore,
     sessionStore = new MemoryStore();
 
-app.use(express.bodyParser());
-app.use(express.cookieParser());
-//app.use(express.session({secret: '1234567890QWERTY'}));
-app.use(express.session({
-    store: sessionStore,
-    secret: '1234567890QWERTY',
-    key: 'express.sid'
-}));
+var mongoose = require('mongoose');
+mongoose.connect('mongodb://localhost/db');
+
+app.configure(function() {
+    sessionStore = new (require('express-sessions'))({
+        storage: 'mongodb',
+        instance: mongoose, // optional
+        collection: 'sessions', // optional
+        expire: 86400 // optional
+    });
+
+    app.use(connect.urlencoded());
+    app.use(connect.json());
+    //app.use(express.bodyParser());
+    app.use(express.cookieParser());
+    //app.use(express.session({secret: '1234567890QWERTY'}));
+//    app.use(express.session({
+//        store: sessionStore,
+//        secret: '1234567890QWERTY',
+//        key: 'express.sid'
+//    }));
+    app.use(express.session({
+        secret: 'a4f8071f-c873-4447-8ee2',
+        cookie: { maxAge: 2628000000 },
+        store: sessionStore
+    }));
+});
 
 app.get('/', function (req, res) {
     if (req.session.user) {
@@ -62,7 +82,7 @@ var clients = [];
 
 io.set('authorization', function (data, accept) {
     if (data.headers.cookie) {
-        var cName = 'express.sid';
+        var cName = 'connect.sid';
         var regex = new RegExp(cName + '=([^;]*)', 'g');
         var result = regex.exec(data.headers.cookie);
         var sessionID = result[1].split('.')[0].replace('s%3A', "");
@@ -79,7 +99,7 @@ io.set('authorization', function (data, accept) {
             }
         });
     } else {
-        return accept('No cookie transmitted.', false);
+        accept('No cookie transmitted.', false);
     }
 });
 
