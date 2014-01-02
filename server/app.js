@@ -25,7 +25,7 @@ var SessionStore = require('express-sessions'),
 var Users = mongoose.model('users',
         new mongoose.Schema({
                 _id: {type: String, index: true, required: true, unique: true},
-                name: String,
+                name: {type: String, index: true, required: true, unique: true},
                 password: String}));
 
 var __initUsers__ = function() {
@@ -97,7 +97,6 @@ app.get('/js/*', function (req, res) {
 
 var authenticate = function(user, pass, cb) {
     cb = cb || function() {};
-    var crypto = require('crypto');
     var p = crypto.createHmac("sha1", '1234567890QWERTY').update(pass).digest("hex");
 
     Users.findOne({name: user}, function(err, doc) {
@@ -106,23 +105,43 @@ var authenticate = function(user, pass, cb) {
         }
         return cb('Invalid username of password', false);
     });
-}
+};
 
 /*
     WebSocket code
  */
-var clientIdCounter = 0;
 var games = {};
 var clients = [];
 
+var extractSessionId = function(cookieString) {
+    var regex = new RegExp('connect.sid=([^;]*)', 'g');
+    var result = regex.exec(cookieString);
+    return result[1].split('.')[0].replace('s%3A', "");
+};
+
+var getSessionById = function(sid, cb) {
+    sessionStore.get(sid, function (err, session) {
+        if (err) {
+            cb(err.message, false);
+        } else {
+            cb(null, session);
+        }
+    });
+};
+
+var getUserById = function(id, cb) {
+    Users.findOne({_id: id}, function(err, doc) {
+        if (!err) {
+            return cb(null, doc);
+        }
+        return cb('Invalid userId', false);
+    });
+};
+
 io.set('authorization', function (data, accept) {
     if (data.headers.cookie) {
-        var cName = 'connect.sid';
-        var regex = new RegExp(cName + '=([^;]*)', 'g');
-        var result = regex.exec(data.headers.cookie);
-        var sessionID = result[1].split('.')[0].replace('s%3A', "");
-
-        sessionStore.get(sessionID, function (err, session) {
+        var sid = extractSessionId(data.headers.cookie);
+        getSessionById(sid, function(err, session) {
             if (err) {
                 accept(err.message, false); //Turn down the connection
             } else {
@@ -139,16 +158,30 @@ io.set('authorization', function (data, accept) {
 });
 
 io.sockets.on('connection', function (socket) {
-
-    socket.emit('initClient', { id: clientIdCounter++ });
+    var sid = extractSessionId(socket.handshake.headers.cookie);
+    getSessionById(sid, function(err, session) {
+        if (session && session.userId) {
+            getUserById(session.userId, function(err, user) {
+                if (!err) {
+                    socket.set('user', {id: user._id, name: user.name}, function() {
+                        socket.emit('initClient', { id: session.userId });
+                    });
+                }
+            });
+        }
+    });
 
     socket.on('createGame', function (data) {
-        var gameName = data.name;
-        var game = new Game(gameName);
-        var player = new Player(data.clientID, socket, game);
-        game.join(player); // join the create game requester automatically to the game
-        games[game.getId()] = game;
-        socket.emit('system', {type: "status", message: "game created!"});
+        socket.get('user', function(err, user) {
+            if (!err) {
+                var gameName = user.name;
+                var game = new Game(gameName);
+                var player = new Player(user.id, socket, game);
+                game.join(player); // join the create game requester automatically to the game
+                games[game.getId()] = game;
+                socket.emit('system', {type: "status", message: "game created!"});
+            }
+        });
     });
 
     socket.on('listGames', function() {
@@ -158,7 +191,7 @@ io.sockets.on('connection', function (socket) {
             var details = {
                 id : game.getId(),
                 name: game.getName()
-            }
+            };
             list.push(details);
         }
         socket.emit('games', {games: list});
