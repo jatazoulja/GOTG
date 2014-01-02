@@ -24,7 +24,7 @@ var SessionStore = require('express-sessions'),
 
 var Users = mongoose.model('users',
         new mongoose.Schema({
-                _id: {type: String, index: true},
+                _id: {type: String, index: true, required: true, unique: true},
                 name: String,
                 password: String}));
 
@@ -55,7 +55,6 @@ app.configure(function() {
         store: sessionStore
     }));
 });
-
 app.get('/', function (req, res) {
     if (req.session.userId) {
         res.sendfile('app.html', {root: '../'});
@@ -67,9 +66,9 @@ app.post('/login', function (req, res) {
     var user = req.body['u'],
         pass = req.body['p'];
 
-    authenticate(user, pass, function(err, id) {
-        if (id) {
-            req.session.userId = id;
+    authenticate(user, pass, function(err, userId) {
+        if (userId) {
+            req.session.userId = userId;
             res.redirect('/');
         } else {
             res.sendfile('login.html', {root: '../'});
@@ -77,14 +76,13 @@ app.post('/login', function (req, res) {
     });
 });
 app.get('/logout', function(req, res) {
-    var sid = req.session.id;
-    sessionStore.destroy(sid, function(err) {
+    req.session.destroy(function(err) {
         if (err) {
             console.log("Error logging out!");
             return;
         }
         res.cookie('connect.sid', '', {expires: new Date(1), path: '/'});
-        res.redirect('/');
+        res.sendfile('login.html', {root: '../'});
     });
 });
 app.get('/lib/*', function (req, res) {
@@ -97,6 +95,22 @@ app.get('/js/*', function (req, res) {
     res.sendfile('js/' + req.params[0], {root: '../'});
 });
 
+var authenticate = function(user, pass, cb) {
+    cb = cb || function() {};
+    var crypto = require('crypto');
+    var p = crypto.createHmac("sha1", '1234567890QWERTY').update(pass).digest("hex");
+
+    Users.findOne({name: user}, function(err, doc) {
+        if (doc && doc.password == p) {
+            return cb(null, doc._id);
+        }
+        return cb('Invalid username of password', false);
+    });
+}
+
+/*
+    WebSocket code
+ */
 var clientIdCounter = 0;
 var games = {};
 var clients = [];
@@ -162,18 +176,4 @@ io.sockets.on('connection', function (socket) {
         }
     });
 });
-
-var authenticate = function(user, pass, cb) {
-    cb = cb || function() {};
-    var crypto = require('crypto');
-    var p = crypto.createHmac("sha1", '1234567890QWERTY').update(pass).digest("hex");
-
-    Users.findOne({name: user}, function(err, doc) {
-        if (doc && doc.password == p) {
-            return cb(null, doc._id);
-        }
-        return cb('Invalid username of password', false);
-    });
-}
-
 server.listen(8080);
