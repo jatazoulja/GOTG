@@ -73,7 +73,7 @@
                 }
             });
             _con.on("disconnect", function() {
-                console.info("Client with id " + _id + " has been disconnected");
+                LOGGER.info("Client with id " + _id + " has been disconnected");
             });
         };
 

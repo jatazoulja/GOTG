@@ -50,7 +50,7 @@
                                     _players[0].setOpponent(_players[1]);
                                     _players[1].setOpponent(_players[0]);
                                 }
-                                console.info("app.game: Player has joined");
+                                LOGGER.info("app.game: Player has joined");
                             } else {
                                 player.notify("system", {type: 'status', message: 'player already in the game'});
                             }

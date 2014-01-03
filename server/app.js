@@ -5,11 +5,13 @@ var express = require("express"),
     io = require('socket.io').listen(server),
     connect = require('connect'),
     crypto = require('crypto'),
-    uuid = require('node-uuid');
+    uuid = require('node-uuid'),
+    logger = io.log;
 
 require('./game');
 require('./player');
 Util = require('util');
+LOGGER = logger;
 
 var mongoose = require('mongoose');
 mongoose.connect('mongodb://localhost/db');
@@ -30,22 +32,23 @@ var Users = mongoose.model('users',
 
 var __initUsers__ = function() {
     Users.find({name: "kenneth"}, function(err, doc) {
-        console.info('FINDING USER ' + Util.inspect(doc, false, null));
+        logger.debug('FINDING USER ' + Util.inspect(doc, false, null));
         if (doc && doc.length == 0) {
             var pass = crypto.createHmac("sha1", '1234567890QWERTY').update('qwerty').digest("hex");
 
             var user = new Users({_id: uuid.v1(), name: "kenneth", password: pass});
             user.save(function(err, user, count) {
                 if (err) {
-                    console.error('SAVING USER FAILED ' + err);
+                    logger.error('SAVING USER FAILED ' + err);
                 }
-                console.info('SAVED USER count ' + count);
+                logger.info('SAVED USER count ' + count);
             });
         }
     });
 }();
 
 app.configure(function() {
+    app.use(express.logger());
     app.use(connect.urlencoded());
     app.use(connect.json());
     app.use(express.cookieParser());
@@ -78,7 +81,7 @@ app.post('/login', function (req, res) {
 app.get('/logout', function(req, res) {
     req.session.destroy(function(err) {
         if (err) {
-            console.log("Error logging out!");
+            logger.log("Error logging out!");
             return;
         }
         res.cookie('connect.sid', '', {expires: new Date(1), path: '/'});
@@ -198,14 +201,14 @@ io.sockets.on('connection', function (socket) {
     });
 
     socket.on('joinGame', function (data) {
-        console.log("evt.joinGame: " + data);
+        logger.debug("evt.joinGame: " + data);
         var game = games[data.id];
 
         if (game) {
             var player = new Player(data.clientID, socket, game);
             game.join(player);
         } else {
-            console.log("evt.joinGame: " + data.id + " not found");
+            logger.error("evt.joinGame: " + data.id + " not found");
         }
     });
 });
