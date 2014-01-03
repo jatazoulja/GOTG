@@ -6,7 +6,8 @@ var express = require("express"),
     connect = require('connect'),
     crypto = require('crypto'),
     uuid = require('node-uuid'),
-    logger = io.log;
+    logger = io.log,
+    cookieParser = express.cookieParser('a4f8071f-c873-4447-8ee2');
 
 require('./game');
 require('./player');
@@ -51,10 +52,10 @@ app.configure(function() {
     app.use(express.logger());
     app.use(connect.urlencoded());
     app.use(connect.json());
-    app.use(express.cookieParser());
+    app.use(cookieParser);
     app.use(express.session({
         secret: 'a4f8071f-c873-4447-8ee2',
-        cookie: { maxAge: 2628000000 },
+        //cookie: { maxAge: 2628000000 },
         store: sessionStore
     }));
 });
@@ -116,22 +117,6 @@ var authenticate = function(user, pass, cb) {
 var games = {};
 var clients = [];
 
-var extractSessionId = function(cookieString) {
-    var regex = new RegExp('connect.sid=([^;]*)', 'g');
-    var result = regex.exec(cookieString);
-    return result[1].split('.')[0].replace('s%3A', "");
-};
-
-var getSessionById = function(sid, cb) {
-    sessionStore.get(sid, function (err, session) {
-        if (err) {
-            cb(err.message, false);
-        } else {
-            cb(null, session);
-        }
-    });
-};
-
 var getUserById = function(id, cb) {
     Users.findOne({_id: id}, function(err, doc) {
         if (!err) {
@@ -141,38 +126,22 @@ var getUserById = function(id, cb) {
     });
 };
 
-io.set('authorization', function (data, accept) {
-    if (data.headers.cookie) {
-        var sid = extractSessionId(data.headers.cookie);
-        getSessionById(sid, function(err, session) {
-            if (err) {
-                accept(err.message, false); //Turn down the connection
-            } else {
-                if (session && session.userId) {
-                    accept(null, true); //Accept the session
-                } else {
-                    accept("No username in session", false); //Turn down the connection
-                }
+var SessionSockets = require('session.socket.io'),
+    sessionSockets = new SessionSockets(io, sessionStore, cookieParser);
+
+sessionSockets.on('connection', function (err, socket, session) {
+    if (!session && !session.userId) {
+        socket.disconnect();
+        return;
+    } else {
+        getUserById(session.userId, function(err, user) {
+            if (!err) {
+                socket.set('user', {id: user._id, name: user.name}, function() {
+                    socket.emit('initClient', { id: session.userId });
+                });
             }
         });
-    } else {
-        accept('No cookie transmitted.', false);
     }
-});
-
-io.sockets.on('connection', function (socket) {
-    var sid = extractSessionId(socket.handshake.headers.cookie);
-    getSessionById(sid, function(err, session) {
-        if (session && session.userId) {
-            getUserById(session.userId, function(err, user) {
-                if (!err) {
-                    socket.set('user', {id: user._id, name: user.name}, function() {
-                        socket.emit('initClient', { id: session.userId });
-                    });
-                }
-            });
-        }
-    });
 
     socket.on('createGame', function (data) {
         socket.get('user', function(err, user) {

@@ -10,6 +10,7 @@
         "express": "3.4.7",
         "connect": "2.12.0",
         "express-sessions": "latest",
+        "session.socket.io": "*",
         "mongoose": "*",
         "node-uuid": "*"
     }
