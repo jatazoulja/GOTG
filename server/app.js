@@ -89,6 +89,49 @@ app.get('/logout', function(req, res) {
         res.sendfile('login.html', {root: '../'});
     });
 });
+app.get('/signup', function (req, res) {
+    if (req.session) {
+        req.session.destroy(function(err) {
+            if (err) {
+                logger.log("Error logging out!");
+                return;
+            }
+            res.cookie('connect.sid', '', {expires: new Date(1), path: '/'});
+            res.sendfile('signup.html', {root: '../'});
+        });
+    } else {
+        res.sendfile('signup.html', {root: '../'});
+    }
+});
+app.post('/doSignup', function (req, res) {
+    var usename = req.body['u'],
+        password = req.body['p'],
+        confirmPass = req.body['cp'];
+
+    if (!usename || !password || !confirmPass) {
+        res.sendfile('signup.html', {root: '../'});
+    } else if (password !== confirmPass) {
+        res.sendfile('signup.html', {root: '../'});
+    } else {
+        Users.find({name: usename}, function(err, doc) {
+            logger.debug('FINDING USER ' + Util.inspect(doc, false, null));
+            if (doc && doc.length == 0) {
+                var hashedPass = crypto.createHmac("sha1", '1234567890QWERTY').update(password).digest("hex");
+                var user = new Users({_id: uuid.v1(), name: usename, password: hashedPass});
+                user.save(function(err, user, count) {
+                    if (err) {
+                        logger.error('SAVING USER FAILED ' + err);
+                        res.sendfile('signup.html', {root: '../'});
+                    }
+                    logger.info('SAVED USER count ' + count);
+                    res.sendfile('login.html', {root: '../'});
+                });
+            } else {
+                res.sendfile('signup.html', {root: '../'});
+            }
+        });
+    }
+});
 app.get('/lib/*', function (req, res) {
     res.sendfile('lib/' + req.params[0], {root: '../'});
 });
