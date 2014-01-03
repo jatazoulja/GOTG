@@ -60,6 +60,7 @@
                         _game.playerMoved(THIS, move.moveId, move.from, move.to);
                     } else {
                         // not this player's turn
+                        _game.playerMoved(THIS, move.moveId, null, null);
                     }
                 } else {
                     // game has not started yet

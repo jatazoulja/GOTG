@@ -18,11 +18,12 @@
 
         var _validateMove = function(from, to) {
             if (to.x < 0 && to.x >= X_AXIS_SIZE && to.y < 0 && to.y >= Y_AXIS_SIZE) {
+                // outside boundary
                 return false;
             }
-            if (to.x - from.x === -1 || to.x - from.x === 1) {
+            if ( (to.x - from.x === -1 || to.x - from.x === 1) && from.y === to.y) {
                 return true;
-            } else if (to.y - from.y === -1 || to.y - from.y === 1) {
+            } else if ((to.y - from.y === -1 || to.y - from.y === 1) && from.x === to.x) {
                 return true;
             }
             return false;
@@ -52,19 +53,28 @@
                 return true;
             },
 
-            move: function(from, to) {
-                var actions;
+            move: function(from, to, cb) {
                 var pieceToMove = _board[from.x][from.y];
                 if (pieceToMove) {
                     if (_validateMove(from, to)) {
+                        var actions;
                         var piece = _board[to.x][to.y];
                         if (!piece) {
                             _board[to.x][to.y] = pieceToMove;
                             _board[from.x][from.y] = null;
-                            // notify client
-                            actions = [
-                                {action : "place", from : from, to: to}
-                            ];
+                            actions = [{action : "place", from : from, to: to}];
+
+                            if (_board[to.x][to.y].rank == 15 && to.y == 0 && _board[to.x][to.y].color == 'black') {
+                                // black won
+                                actions.push({action: 'finished', winner: 'black'});
+                            } else if (_board[to.x][to.y].rank == 15 && to.y == Y_AXIS_SIZE-1
+                                && _board[to.x][to.y].color == 'white') {
+                                // white won
+                                actions.push({action: 'finished', winner: 'white'});
+                            }
+
+                            // notify game
+                            return cb(null, actions);
                         } else {
                             // either same side's piece or opponent piece
                             if (piece.color != pieceToMove.color) {
@@ -81,10 +91,10 @@
                                     // both dead, remove them both
                                     _board[from.x][from.y] = null;
                                     _board[to.x][to.y] = null;
-                                    // notify client
+                                    // notify game
+                                    return cb(null, actions);
 
-                                }
-                                if (Board.PIECES[pieceToMove.rank].canKill.indexOf(parseInt(piece.rank)) > -1) {
+                                } else if (Board.PIECES[pieceToMove.rank].canKill.indexOf(parseInt(piece.rank)) > -1) {
                                     // player who moved won!
                                     actions = [
                                         {action: 'remove', position: to},
@@ -95,38 +105,34 @@
                                     }
                                     _board[to.x][to.y] = _board[from.x][from.y];
                                     _board[from.x][from.y] = null;
+                                    return cb(null, actions);
                                 } else {
                                     // player who moved lost!
                                     actions = [
                                         {action: "remove", position: from}
-                                    ]
+                                    ];
                                     if (_board[from.x][from.y].rank == 15) {
                                         actions.push({action: 'finished', winner: _board[to.x][to.y].color});
                                     }
                                     _board[from.x][from.y] = null;
-                                    // notify client
+                                    // notify game
+                                    return cb(null, actions);
                                 }
                             } else {
                                 // invalid move!
-                                return false;
+                                LOGGER.info('Board.move: Invalid Move!');
+                                return cb('invalid move!', null);
                             }
                         }
-                        if (_board[to.x][to.y].rank == 15 && to.y == 0 && _board[to.x][to.y].color == 'black') {
-                            // black won
-                            actions.push({action: 'finished', winner: 'black'});
-                        } else if (_board[to.x][to.y].rank == 15 && to.y == Y_AXIS_SIZE-1
-                            && _board[to.x][to.y].color == 'white') {
-                            // white won
-                            actions.push({action: 'finished', winner: 'white'});
-                        }
-                        return actions;
                     } else {
                         // move is invalid
-                        return false;
+                        LOGGER.info('Board.move: Invalid Move!');
+                        return cb('invalid move!', null);
                     }
                 } else {
                     // this piece is no longer there... player might be cheating!!
-                    return false;
+                    LOGGER.info('Board.move: piece is no longer there... player might be cheating!!');
+                    return cb('piece is no longer there... player might be cheating!!', null);
                 }
             }
         }

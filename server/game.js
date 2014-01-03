@@ -90,16 +90,22 @@
             },
 
             playerMoved: function(player, moveId, from, to) {
-                var actions = _board.move(from, to);
-                if (actions) {
-                    for (var i = 0; i < _players.length; i++) {
-                        _players[i].toggleTurn();
-                        _players[i].notify("client.move", {success: true,
-                            actions: actions, moveId: moveId, turn: _players[i].turn()});
-                    }
-                } else {
+                if (!from || !to) {
                     player.notify("client.move", {success: false, desc: "invalid move",
-                        moveId: moveId, turn: _players[i].turn()});
+                        moveId: moveId, turn: player.turn()});
+                } else {
+                    _board.move(from, to, function(err, actions) {
+                        if (err) {
+                            player.notify("client.move", {success: false, desc: "invalid move",
+                                moveId: moveId, turn: player.turn()});
+                        } else {
+                            for (var i = 0; i < _players.length; i++) {
+                                _players[i].toggleTurn();
+                                _players[i].notify("client.move", {success: true,
+                                    actions: actions, moveId: moveId, turn: _players[i].turn()});
+                            }
+                        }
+                    });
                 }
             }
         }
