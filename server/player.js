@@ -60,14 +60,16 @@
                         _game.playerMoved(THIS, move.moveId, move.from, move.to);
                     } else {
                         // not this player's turn
-                        _game.playerMoved(THIS, move.moveId, null, null);
+                        //_game.playerMoved(THIS, move.moveId, null, null);
+                        THIS.notify("client.move", {success: false, desc: "Not your turn",
+                            moveId: move.moveId, turn: THIS.turn()});
                     }
                 } else {
                     // game has not started yet
                 }
             });
             _con.on("server.place", function(data) {
-                if (!_game.hasStarted()) {
+                if (!_game.hasStarted() && _game.isReady()) {
                     _game.playerPlace(THIS, data.pieces);
                 } else {
                     // game has not started yet
