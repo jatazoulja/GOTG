@@ -7,7 +7,8 @@ var express = require("express"),
     crypto = require('crypto'),
     uuid = require('node-uuid'),
     logger = io.log,
-    cookieParser = express.cookieParser('a4f8071f-c873-4447-8ee2');
+    _secretKey_ = 'a4f8071f-c873-4447-8ee2',
+    cookieParser = express.cookieParser(_secretKey_);
 
 require('./game');
 require('./player');
@@ -35,7 +36,7 @@ var __initUsers__ = function() {
     Users.find({name: "kenneth"}, function(err, doc) {
         logger.debug('FINDING USER ' + Util.inspect(doc, false, null));
         if (doc && doc.length == 0) {
-            var pass = crypto.createHmac("sha1", '1234567890QWERTY').update('qwerty').digest("hex");
+            var pass = crypto.createHmac("sha1", _secretKey_).update('qwerty').digest("hex");
 
             var user = new Users({_id: uuid.v1(), name: "kenneth", password: pass});
             user.save(function(err, user, count) {
@@ -54,7 +55,7 @@ app.configure(function() {
     app.use(connect.json());
     app.use(cookieParser);
     app.use(express.session({
-        secret: 'a4f8071f-c873-4447-8ee2',
+        secret: _secretKey_,
         //cookie: { maxAge: 2628000000 },
         store: sessionStore
     }));
@@ -116,7 +117,7 @@ app.post('/doSignup', function (req, res) {
         Users.find({name: usename}, function(err, doc) {
             logger.debug('FINDING USER ' + Util.inspect(doc, false, null));
             if (doc && doc.length == 0) {
-                var hashedPass = crypto.createHmac("sha1", '1234567890QWERTY').update(password).digest("hex");
+                var hashedPass = crypto.createHmac("sha1", _secretKey_).update(password).digest("hex");
                 var user = new Users({_id: uuid.v1(), name: usename, password: hashedPass});
                 user.save(function(err, user, count) {
                     if (err) {
@@ -144,7 +145,7 @@ app.get('/js/*', function (req, res) {
 
 var authenticate = function(user, pass, cb) {
     cb = cb || function() {};
-    var p = crypto.createHmac("sha1", '1234567890QWERTY').update(pass).digest("hex");
+    var p = crypto.createHmac("sha1", _secretKey_).update(pass).digest("hex");
 
     Users.findOne({name: user}, function(err, doc) {
         if (doc && doc.password == p) {
@@ -205,7 +206,7 @@ sessionSockets.on('connection', function (err, socket, session) {
             var game = games[key];
             var details = {
                 id : game.getId(),
-                name: game.getName()
+                name: game.getName() + ' (' + ((game.getPlayers().length >= game.maxPlayers) ? 'FULL' : game.getPlayers().length) + ')'
             };
             list.push(details);
         }

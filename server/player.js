@@ -77,6 +77,7 @@
             });
             _con.on("disconnect", function() {
                 LOGGER.info("Client with id " + _id + " has been disconnected");
+                _game.playerDisconnected(THIS);
             });
         };
 

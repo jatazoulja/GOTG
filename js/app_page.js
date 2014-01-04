@@ -201,6 +201,8 @@
         socket.on('system', function(data) {
             if (data.type == "status") {
                 console.log(data.message);
+            } else if (data.type == "alert") {
+                alert(data.message);
             } else {
                 if (data.success) {
                     console.log("game has started");

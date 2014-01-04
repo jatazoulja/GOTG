@@ -29,6 +29,12 @@
             getName: function () {
                 return _name;
             },
+            getPlayers: function() {
+                return _players;
+            },
+
+            maxPlayers: MAX_PLAYERS,
+
             setName: function(name) {
                 _name = name;
             },
@@ -102,6 +108,20 @@
                         }
                     }
                 });
+            },
+
+            playerDisconnected: function(player) {
+                if (player) {
+                    player.getOpponent().notify('system', {type: "alert", message: "Opponent has been disconnected"})
+                    for (var i = 0; i < _players.length; i++) {
+                        if (_players[i].getId() == player.getId()) {
+                            _players.splice(i, 1);
+                            break;
+                        }
+                    }
+                    _ready = false;
+                    _started = false;
+                }
             }
         }
     };
