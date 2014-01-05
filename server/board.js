@@ -54,6 +54,7 @@
             },
 
             move: function(from, to, cb) {
+                var end = false;
                 var pieceToMove = _board[from.x][from.y];
                 if (pieceToMove) {
                     if (_validateMove(from, to)) {
@@ -67,14 +68,16 @@
                             if (_board[to.x][to.y].rank == 15 && to.y == 0 && _board[to.x][to.y].color == 'black') {
                                 // black won
                                 actions.push({action: 'finished', winner: 'black'});
+                                end = true;
                             } else if (_board[to.x][to.y].rank == 15 && to.y == Y_AXIS_SIZE-1
                                 && _board[to.x][to.y].color == 'white') {
                                 // white won
                                 actions.push({action: 'finished', winner: 'white'});
+                                end = true;
                             }
 
                             // notify game
-                            return cb(null, actions);
+                            return cb(null, actions, end);
                         } else {
                             // either same side's piece or opponent piece
                             if (piece.color != pieceToMove.color) {
@@ -87,12 +90,13 @@
                                     if (piece.rank == 15) {
                                         // both are flag, we had a draw
                                         actions.push({action: 'finished', winner: ''});
+                                        end = true;
                                     }
                                     // both dead, remove them both
                                     _board[from.x][from.y] = null;
                                     _board[to.x][to.y] = null;
                                     // notify game
-                                    return cb(null, actions);
+                                    return cb(null, actions, end);
 
                                 } else if (Board.PIECES[pieceToMove.rank].canKill.indexOf(parseInt(piece.rank)) > -1) {
                                     // player who moved won!
@@ -102,10 +106,11 @@
                                     ];
                                     if (_board[to.x][to.y].rank == 15) {
                                         actions.push({action: 'finished', winner: _board[from.x][from.y].color});
+                                        end = true;
                                     }
                                     _board[to.x][to.y] = _board[from.x][from.y];
                                     _board[from.x][from.y] = null;
-                                    return cb(null, actions);
+                                    return cb(null, actions, end);
                                 } else {
                                     // player who moved lost!
                                     actions = [
@@ -113,26 +118,27 @@
                                     ];
                                     if (_board[from.x][from.y].rank == 15) {
                                         actions.push({action: 'finished', winner: _board[to.x][to.y].color});
+                                        end = true;
                                     }
                                     _board[from.x][from.y] = null;
                                     // notify game
-                                    return cb(null, actions);
+                                    return cb(null, actions, end);
                                 }
                             } else {
                                 // invalid move!
                                 LOGGER.info('Board.move: Invalid Move!');
-                                return cb('invalid move!', null);
+                                return cb('invalid move!', null, end);
                             }
                         }
                     } else {
                         // move is invalid
                         LOGGER.info('Board.move: Invalid Move!');
-                        return cb('invalid move!', null);
+                        return cb('invalid move!', null, end);
                     }
                 } else {
                     // this piece is no longer there... player might be cheating!!
                     LOGGER.info('Board.move: piece is no longer there... player might be cheating!!');
-                    return cb('piece is no longer there... player might be cheating!!', null);
+                    return cb('piece is no longer there... player might be cheating!!', null, end);
                 }
             }
         }

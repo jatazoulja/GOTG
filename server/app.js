@@ -10,6 +10,7 @@ var express = require("express"),
     _secretKey_ = 'a4f8071f-c873-4447-8ee2',
     cookieParser = express.cookieParser(_secretKey_);
 
+require('./gameManager.js');
 require('./game');
 require('./player');
 Util = require('util');
@@ -158,9 +159,6 @@ var authenticate = function(user, pass, cb) {
 /*
     WebSocket code
  */
-var games = {};
-var clients = [];
-
 var getUserById = function(id, cb) {
     Users.findOne({_id: id}, function(err, doc) {
         if (!err) {
@@ -191,31 +189,20 @@ sessionSockets.on('connection', function (err, socket, session) {
         socket.get('user', function(err, user) {
             if (!err) {
                 var gameName = user.name;
-                var game = new Game(gameName);
-                var player = new Player(user.id, socket, game);
-                game.join(player); // join the create game requester automatically to the game
-                games[game.getId()] = game;
+                var game = GameManager.createGame(gameName);
+                game.join(new Player(user.id, socket, game)); // join the create game requester automatically to the game
                 socket.emit('system', {type: "status", message: "game created!"});
             }
         });
     });
 
     socket.on('listGames', function() {
-        var list = [];
-        for (var key in games) {
-            var game = games[key];
-            var details = {
-                id : game.getId(),
-                name: game.getName() + ' (' + ((game.getPlayers().length >= game.maxPlayers) ? 'FULL' : game.getPlayers().length) + ')'
-            };
-            list.push(details);
-        }
-        socket.emit('games', {games: list});
+        socket.emit('games', {games: GameManager.listGames()});
     });
 
     socket.on('joinGame', function (data) {
         logger.debug("evt.joinGame: " + data);
-        var game = games[data.id];
+        var game = GameManager.getGame(data.id);
 
         if (game) {
             var player = new Player(data.clientID, socket, game);

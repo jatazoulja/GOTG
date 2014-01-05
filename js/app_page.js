@@ -249,7 +249,11 @@
                         jFromObj.html("");
                         $("#"+toId).html(rPiece);
                     } else if (type == 'finished') {
-                        alert(action.winner + " has won!");
+                        if (action.winner) {
+                            alert(action.winner + " has won!");
+                        } else {
+                            alert("It's a DRAW!!!");
+                        }
                     }
                 }
             }

@@ -1,9 +1,10 @@
 (function() {
     require('./board');
+    var uuid = require('node-uuid');
     Game = function(name) {
         var MAX_PLAYERS = 2;
 
-        var _id = Game.__id++,
+        var _id = uuid.v1(),
             _name,
             _players = [],
             _board = new Board(),
@@ -92,11 +93,14 @@
                         player.notify("game.start", {started: _started, turn: player.turn()});
                         player.getOpponent().notify("game.start", {started: _started, turn: player.getOpponent().turn()});
                     }
+                } else {
+                    player.notify("system", {type: "alert", message: "You have placed on an invalid board location"});
                 }
             },
 
             playerMoved: function(player, moveId, from, to) {
-                _board.move(from, to, function(err, actions) {
+                var o = this;
+                _board.move(from, to, function(err, actions, end) {
                     if (err) {
                         player.notify("client.move", {success: false, desc: "invalid move",
                             moveId: moveId, turn: player.turn()});
@@ -106,6 +110,9 @@
                             _players[i].notify("client.move", {success: true,
                                 actions: actions, moveId: moveId, turn: _players[i].turn()});
                         }
+                    }
+                    if (end) {
+                        GameManager.removeGame(o.getId());
                     }
                 });
             },
@@ -125,6 +132,4 @@
             }
         }
     };
-
-    Game.__id = 0;
 })();
