@@ -26,6 +26,7 @@
         },
 
         removeGame: function(gameId) {
+            this.__games__[gameId].destroy();
             this.__games__[gameId] = null;
             delete this.__games__[gameId];
         }

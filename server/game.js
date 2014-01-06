@@ -113,7 +113,6 @@
                     }
                     if (end) {
                         GameManager.removeGame(o.getId());
-                        o.destroy();
                     }
                 });
             },
