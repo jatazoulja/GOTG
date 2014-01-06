@@ -113,6 +113,7 @@
                     }
                     if (end) {
                         GameManager.removeGame(o.getId());
+                        o.destroy();
                     }
                 });
             },
@@ -129,6 +130,14 @@
                     _ready = false;
                     _started = false;
                 }
+            },
+
+            destroy: function() {
+                for (var i = 0; i <  _players.length; i++) {
+                    _players[i].destroy();
+                }
+                _players = null;
+                _board = null;
             }
         }
     };

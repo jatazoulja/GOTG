@@ -50,35 +50,59 @@
 
             toggleTurn: function() {
                 _turn = (_turn) ? false : true;
+            },
+
+            destroy: function() {
+                _removeEvents();
+                _game = null;
+                _con = null;
+            }
+        };
+
+        var __EVENTS__ = {
+            'server.move': {
+                fn: function(move) {
+                    if (_game.hasStarted()) {
+                        if (_turn) {
+                            _game.playerMoved(THIS, move.moveId, move.from, move.to);
+                        } else {
+                            // not this player's turn
+                            //_game.playerMoved(THIS, move.moveId, null, null);
+                            THIS.notify("client.move", {success: false, desc: "Not your turn",
+                                moveId: move.moveId, turn: THIS.turn()});
+                        }
+                    } else {
+                        // game has not started yet
+                    }
+                }
+            },
+            "server.place": {
+                fn: function(data) {
+                    if (!_game.hasStarted() && _game.isReady()) {
+                        _game.playerPlace(THIS, data.pieces);
+                    } else {
+                        // game has not started yet
+                    }
+                }
+            },
+            'disconnect': {
+                fn: function() {
+                    LOGGER.info("Client with id " + _id + " has been disconnected");
+                    _game.playerDisconnected(THIS);
+                }
             }
         };
 
         var _initEvents = function() {
-            _con.on("server.move", function(move) {
-                if (_game.hasStarted()) {
-                    if (_turn) {
-                        _game.playerMoved(THIS, move.moveId, move.from, move.to);
-                    } else {
-                        // not this player's turn
-                        //_game.playerMoved(THIS, move.moveId, null, null);
-                        THIS.notify("client.move", {success: false, desc: "Not your turn",
-                            moveId: move.moveId, turn: THIS.turn()});
-                    }
-                } else {
-                    // game has not started yet
-                }
-            });
-            _con.on("server.place", function(data) {
-                if (!_game.hasStarted() && _game.isReady()) {
-                    _game.playerPlace(THIS, data.pieces);
-                } else {
-                    // game has not started yet
-                }
-            });
-            _con.on("disconnect", function() {
-                LOGGER.info("Client with id " + _id + " has been disconnected");
-                _game.playerDisconnected(THIS);
-            });
+            for (var key in __EVENTS__) {
+                _con.on(key, __EVENTS__[key].fn);
+            }
+        };
+
+        var _removeEvents = function() {
+            for (var key in __EVENTS__) {
+                _con.removeListener(key, __EVENTS__[key].fn);
+            }
         };
 
         _initEvents();
