@@ -119,7 +119,7 @@
             },
 
             playerDisconnected: function(player) {
-                if (player) {
+                if (player && player.getOpponent()) {
                     player.getOpponent().notify('system', {type: "alert", message: "Opponent has been disconnected"})
                     for (var i = 0; i < _players.length; i++) {
                         if (_players[i].getId() == player.getId()) {

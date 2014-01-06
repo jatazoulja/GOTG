@@ -173,6 +173,7 @@ var SessionSockets = require('session.socket.io'),
 
 sessionSockets.on('connection', function (err, socket, session) {
     if (!session && !session.userId) {
+        LOGGER.debug('invalid session, force closing websocket');
         socket.disconnect();
         return;
     } else {
